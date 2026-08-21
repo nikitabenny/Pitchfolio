@@ -7,7 +7,7 @@ class Player(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     element_type: Mapped[int] = mapped_column(index=True)
     web_name: Mapped[str] = mapped_column(String(50), index=True)
-    now_cost: Mapped[int] = mapped_column(index=True)
+    now_cost: Mapped[float] = mapped_column(index=True)
     goals_scored: Mapped[int] = mapped_column()
     assists: Mapped[int] = mapped_column()
     minutes: Mapped[int] = mapped_column()
