@@ -27,7 +27,7 @@ async def fetch_transfers(client : httpx.AsyncClient, team_id : str) -> dict:
 
 async def fetch_squad(client : httpx.AsyncClient, team_id : str, gameweek_id : str) -> dict:
     #retrieve response 
-    response = await client.get(f'entry/{team_id}/transfers/event/{gameweek_id}/picks/')
+    response = await client.get(f'entry/{team_id}/event/{gameweek_id}/picks/')
 
     #error code checking
     response.raise_for_status()

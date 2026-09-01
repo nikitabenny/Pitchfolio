@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from database import Base,engine,get_db
 from fpl_client import lifespan, fetch_bootstrap
 from typing import Optional
-from crud import pos_price_match, under_budget, upsert_player, read_players, find_player_by_id, find_player_by_eltype
+from crud import find_player_value, pos_price_match, under_budget, upsert_player, read_players, find_player_by_id, find_player_by_eltype, find_player_points
 
 app = FastAPI(lifespan = lifespan)
 
@@ -18,7 +18,7 @@ def health_check():
 async def refresh_players(request : Request, db : Session = Depends(get_db), ):
     data = await fetch_bootstrap(request.app.state.client)
     upsert_player(db,data["elements"])
-    db.commit()
+    db.commit()  
 
 @app.get("/players")
 def get_player_info(db : Session = Depends(get_db),
@@ -42,3 +42,9 @@ def get_player_info(db : Session = Depends(get_db),
 def id_search(id: int, db : Session = Depends(get_db)):
     player = find_player_by_id(id,db)
     return player
+
+@app.get("/players_ppm/{id}")
+def points_by_id(id: int, db : Session = Depends(get_db)):
+    points = find_player_points(id,db)
+    value = find_player_value(id,db)
+    return points

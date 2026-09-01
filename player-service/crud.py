@@ -66,6 +66,15 @@ def pos_price_match(eltype: str, price:float, db:Session) -> list[Player]:
     matches = db.query(Player).filter(Player.element_type == pos_int, Player.now_cost <= price).all()
     return matches
 
+def find_player_points(id: int, db: Session) -> int:
+    match = db.query(Player).filter(Player.id == id).first()
+    return match.total_points()
+
+def find_player_value(id: int, db: Session) -> int:
+    match = db.query(Player).filter(Player.id == id).first()
+    return match.now_cost()
+
+
 
 
     

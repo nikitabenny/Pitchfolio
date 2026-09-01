@@ -24,3 +24,4 @@ class Player(Base):
     points_per_game: Mapped[float] = mapped_column()
     defensive_contribution: Mapped[int] = mapped_column()
     bps: Mapped[int] = mapped_column()
+    total_points: Mapped[int] = mapped_column()
