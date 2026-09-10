@@ -15,8 +15,8 @@ async def lifespan(app: FastAPI):
 
 
 async def fetch_transfers(client : httpx.AsyncClient, team_id : str) -> dict:
-    #retrieve response 
-    response = await client.get('entry/{team_id}/transfers/')
+    #retrieve response
+    response = await client.get(f'entry/{team_id}/transfers/')
 
     #error code checking
     response.raise_for_status()
@@ -46,6 +46,15 @@ async def fetch_bootstrap(client : httpx.AsyncClient) -> dict:
     #error code checking
     response.raise_for_status()
     return response.json()
+
+async def fetch_current_gameweek(client : httpx.AsyncClient) -> int:
+    data = await fetch_bootstrap(client)
+
+    for event in data["events"]:
+        if event["is_current"]:
+            return event["id"]
+
+    raise ValueError("no current gameweek found in bootstrap data")
 
 async def fetch_now_cost(client : httpx.AsyncClient, player_id: int) -> float:
     #now_cost isn't exposed per-player, so pull the full bootstrap list and find this player

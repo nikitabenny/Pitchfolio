@@ -1,8 +1,8 @@
-from fpl_client import lifespan as fpl_lifespan, fetch_squad, fetch_now_cost
+from fpl_client import lifespan as fpl_lifespan, fetch_squad, fetch_now_cost, fetch_transfers
 from fastapi import FastAPI, Request, Depends
 from contextlib import asynccontextmanager
 from database import Base, engine, get_db
-from crud import upsert_squad, read_squad, buy_cost, sell_cost, fetch_fk
+from crud import upsert_squad, read_squad, buy_cost, sell_cost, fetch_fk, process_transfers
 from sqlalchemy.ext.asyncio import AsyncSession
 
 @asynccontextmanager
@@ -18,10 +18,15 @@ app = FastAPI(lifespan = lifespan)
 def health_check():
     return {"status": "ok"}
 
+@app.post("/ingest-transfers")
+async def add_transfers(request : Request, team_id: str, db : AsyncSession = Depends(get_db)):
+    await process_transfers(request.app.state.client, db, team_id)
+    await db.commit()
+
 @app.post("/ingest-squad")
 async def refresh_squad(request : Request, team_id: str, gameweek_id: str, db : AsyncSession = Depends(get_db)):
     data = await fetch_squad(request.app.state.client, team_id, gameweek_id)
-    await upsert_squad(db, data["picks"])
+    await upsert_squad(request.app.state.client, db, data["picks"])
     await db.commit()
 
 @app.get("/squad")
