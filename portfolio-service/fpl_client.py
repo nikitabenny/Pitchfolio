@@ -2,8 +2,6 @@ import httpx
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
-PLAYER_SERVICE_URL = "http://player-service:8000/"
-
 
 @asynccontextmanager 
 async def lifespan(app: FastAPI):
@@ -40,3 +38,21 @@ async def fetch_my_history(client : httpx.AsyncClient, team_id: str) -> dict:
     #error code checking
     response.raise_for_status()
     return response.json()
+
+async def fetch_bootstrap(client : httpx.AsyncClient) -> dict:
+    #retrieve response
+    response = await client.get('bootstrap-static/')
+
+    #error code checking
+    response.raise_for_status()
+    return response.json()
+
+async def fetch_now_cost(client : httpx.AsyncClient, player_id: int) -> float:
+    #now_cost isn't exposed per-player, so pull the full bootstrap list and find this player
+    data = await fetch_bootstrap(client)
+
+    for element in data["elements"]:
+        if element["id"] == player_id:
+            return element["now_cost"] * 0.1
+
+    raise ValueError(f"player {player_id} not found in bootstrap data")

@@ -21,7 +21,7 @@ class Squad(Base):
     active_status: Mapped[bool] = mapped_column(bool)
 
 
-class Squad_Info(Base):
-    __tablename__ = "squad_info"
-    event : Mapped[int] = mapped_column()
-    event_points : Mapped[int] = mapped_column
+# class Squad_Info(Base):
+#     __tablename__ = "squad_info"
+#     event : Mapped[int] = mapped_column()
+#     event_points : Mapped[int] = mapped_column
