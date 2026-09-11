@@ -13,6 +13,11 @@ async def lifespan(app: FastAPI):
     finally:
         await async_client.aclose()
 
+async def fetch_myinfo(client : httpx.AsyncClient, team_id : str) -> dict:
+    response = await client.get(f'entry/{team_id}/')
+
+    response.raise_for_status()
+    return response.json()
 
 async def fetch_transfers(client : httpx.AsyncClient, team_id : str) -> dict:
     #retrieve response

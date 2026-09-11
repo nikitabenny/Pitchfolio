@@ -26,7 +26,7 @@ async def add_transfers(request : Request, team_id: str, db : AsyncSession = Dep
 @app.post("/ingest-squad")
 async def refresh_squad(request : Request, team_id: str, gameweek_id: str, db : AsyncSession = Depends(get_db)):
     data = await fetch_squad(request.app.state.client, team_id, gameweek_id)
-    await upsert_squad(request.app.state.client, db, data["picks"])
+    await upsert_squad(request.app.state.client, db, data["picks"], team_id)
     await db.commit()
 
 @app.get("/squad")

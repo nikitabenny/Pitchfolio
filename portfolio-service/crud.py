@@ -3,9 +3,9 @@ from datetime import datetime
 from sqlalchemy import select, inspect, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from models import Squad
-from fpl_client import fetch_transfers, fetch_now_cost
+from fpl_client import fetch_transfers, fetch_now_cost, fetch_myinfo
 
-async def upsert_squad(client: httpx.AsyncClient, db: AsyncSession, picks: list[dict]):
+async def upsert_squad(client: httpx.AsyncClient, db: AsyncSession, picks: list[dict], team_id: str):
     result = await db.execute(select(Squad).where(Squad.active_status == True))
     squad_by_player_id = {row.player_id: row for row in result.scalars().all()}
 
@@ -18,8 +18,11 @@ async def upsert_squad(client: httpx.AsyncClient, db: AsyncSession, picks: list[
 
         #never been through a recorded transfer (e.g. initial season-draft squad)
         else:
+            my_info = await fetch_myinfo(client,team_id)
             queryPlayer = Squad()
             queryPlayer.buy_price = await fetch_now_cost(client, pick["element"])
+            queryPlayer.buy_gw = my_info["started_event"]
+            queryPlayer.buy_date = my_info["joined_time"]
 
         for key, value in pick.items():
             if key == "element":
@@ -32,7 +35,7 @@ async def upsert_squad(client: httpx.AsyncClient, db: AsyncSession, picks: list[
                 python_type = columns[key].type.python_type
                 setattr(queryPlayer, key, python_type(value))
 
-            setattr(queryPlayer, "active_status", True)
+        setattr(queryPlayer, "active_status", True)
 
         db.add(queryPlayer)
 
@@ -83,7 +86,7 @@ async def buy_cost(db: AsyncSession, id: int) -> float:
 
 async def sell_cost(db: AsyncSession, id: int) -> float | None:
     match = await db.get(Squad, id)
-    if not match.active_status:
+    if match.active_status:
         return None
 
     else:
