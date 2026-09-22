@@ -22,7 +22,7 @@ async def upsert_squad(client: httpx.AsyncClient, db: AsyncSession, picks: list[
             queryPlayer = Squad()
             queryPlayer.buy_price = await fetch_now_cost(client, pick["element"])
             queryPlayer.buy_gw = my_info["started_event"]
-            queryPlayer.buy_date = my_info["joined_time"]
+            queryPlayer.buy_date = datetime.fromisoformat(my_info["joined_time"]).replace(tzinfo=None)
 
         for key, value in pick.items():
             if key == "element":
