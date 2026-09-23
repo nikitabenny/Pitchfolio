@@ -3,8 +3,9 @@ from sqlalchemy.orm import Session
 from database import Base,engine,get_db
 from fpl_client import lifespan, fetch_bootstrap, fetch_history, fetch_fixtures, fetch_current_gameweek
 from typing import Optional
-from crud import find_player_value, pos_price_match, under_budget, upsert_player, read_players, find_player_by_id, find_player_by_eltype, find_player_points, build_gameweek_rows, upsert_player_gameweek, max_ingested_round
+from crud import find_player_value, pos_price_match, under_budget, upsert_player, read_players, find_player_by_id, find_player_by_eltype, find_player_points, build_gameweek_rows, upsert_player_gameweek, max_ingested_round, read_gameweeks
 from historical import build_historical_rows
+from auth import require_api_key
 
 app = FastAPI(lifespan = lifespan)
 
@@ -72,6 +73,10 @@ async def ingest_gameweeks(player_id: int, season: str, request: Request, db: Se
     rows = build_gameweek_rows(player.code, season, new_history, fixtures_by_id)
     upsert_player_gameweek(db, rows)
     db.commit()
+
+@app.get("/player-gameweeks", dependencies=[Depends(require_api_key)])
+def get_gameweeks(db: Session = Depends(get_db), season: Optional[str] = None, player_code: Optional[int] = None):
+    return read_gameweeks(db, season=season, player_code=player_code)
 
 @app.post("/ingest-historical/{season}")
 def ingest_historical(season: str, db: Session = Depends(get_db)):
