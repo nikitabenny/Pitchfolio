@@ -1,9 +1,9 @@
 from fastapi import FastAPI,Request,Depends
 from sqlalchemy.orm import Session
 from database import Base,engine,get_db
-from fpl_client import lifespan, fetch_bootstrap, fetch_history, fetch_fixtures
+from fpl_client import lifespan, fetch_bootstrap, fetch_history, fetch_fixtures, fetch_current_gameweek
 from typing import Optional
-from crud import find_player_value, pos_price_match, under_budget, upsert_player, read_players, find_player_by_id, find_player_by_eltype, find_player_points, build_gameweek_rows, upsert_player_gameweek
+from crud import find_player_value, pos_price_match, under_budget, upsert_player, read_players, find_player_by_id, find_player_by_eltype, find_player_points, build_gameweek_rows, upsert_player_gameweek, max_ingested_round
 
 app = FastAPI(lifespan = lifespan)
 
@@ -52,22 +52,34 @@ def points_by_id(id: int, db : Session = Depends(get_db)):
 
 @app.post("/ingest-gameweeks/{player_id}")
 async def ingest_gameweeks(player_id: int, season: str, request: Request, db: Session = Depends(get_db)):
+    current_gw = await fetch_current_gameweek(request.app.state.client)
+    max_round = max_ingested_round(db, player_id, season)
+    if max_round is not None and current_gw <= max_round:
+        return
+
     history_data = await fetch_history(request.app.state.client, player_id)
     fixtures = await fetch_fixtures(request.app.state.client)
     fixtures_by_id = {fixture["id"]: fixture for fixture in fixtures}
 
-    rows = build_gameweek_rows(player_id, season, history_data["history"], fixtures_by_id)
+    new_history = [row for row in history_data["history"] if max_round is None or row["round"] > max_round]
+    rows = build_gameweek_rows(player_id, season, new_history, fixtures_by_id)
     upsert_player_gameweek(db, rows)
     db.commit()
 
 @app.post("/ingest-gameweeks")
 async def ingest_all_gameweeks(season: str, request: Request, db: Session = Depends(get_db)):
+    current_gw = await fetch_current_gameweek(request.app.state.client)
     fixtures = await fetch_fixtures(request.app.state.client)
     fixtures_by_id = {fixture["id"]: fixture for fixture in fixtures}
 
     for player in read_players(db):
+        max_round = max_ingested_round(db, player.id, season)
+        if max_round is not None and current_gw <= max_round:
+            continue
+
         history_data = await fetch_history(request.app.state.client, player.id)
-        rows = build_gameweek_rows(player.id, season, history_data["history"], fixtures_by_id)
+        new_history = [row for row in history_data["history"] if max_round is None or row["round"] > max_round]
+        rows = build_gameweek_rows(player.id, season, new_history, fixtures_by_id)
         upsert_player_gameweek(db, rows)
 
     db.commit()

@@ -34,3 +34,12 @@ async def fetch_fixtures(client : httpx.AsyncClient) -> list[dict]:
     response.raise_for_status()
     return response.json()
 
+async def fetch_current_gameweek(client : httpx.AsyncClient) -> int:
+    data = await fetch_bootstrap(client)
+
+    for event in data["events"]:
+        if event["is_current"]:
+            return event["id"]
+
+    raise ValueError("no current gameweek found in bootstrap data")
+

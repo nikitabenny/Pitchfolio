@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import inspect
+from sqlalchemy import inspect, func
 from datetime import datetime
 from models import Player, PlayerGameweek
 
@@ -57,6 +57,13 @@ def build_gameweek_rows(player_id: int, season: str, history: list[dict], fixtur
         results.append(result)
 
     return results
+
+
+def max_ingested_round(db: Session, player_id: int, season: str) -> int | None:
+    return db.query(func.max(PlayerGameweek.round)).filter(
+        PlayerGameweek.player_id == player_id,
+        PlayerGameweek.season == season,
+    ).scalar()
 
 
 def upsert_player_gameweek(db: Session, rows: list[dict]):
