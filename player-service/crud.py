@@ -60,13 +60,15 @@ def build_gameweek_rows(player_code: int, season: str, history: list[dict], fixt
     return results
 
 
-def read_gameweeks(db: Session, season: str | None = None, player_code: int | None = None) -> list[PlayerGameweek]:
+def read_gameweeks(db: Session, season: str | None = None, player_code: int | None = None,
+                    limit: int = 1000, offset: int = 0) -> list[PlayerGameweek]:
     query = db.query(PlayerGameweek)
     if season is not None:
         query = query.filter(PlayerGameweek.season == season)
     if player_code is not None:
         query = query.filter(PlayerGameweek.player_code == player_code)
-    return query.all()
+    #stable ordering is required for offset-based paging to be consistent across calls
+    return query.order_by(PlayerGameweek.id).limit(limit).offset(offset).all()
 
 
 def max_ingested_round(db: Session, player_code: int, season: str) -> int | None:

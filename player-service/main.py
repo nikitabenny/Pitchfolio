@@ -75,8 +75,9 @@ async def ingest_gameweeks(player_id: int, season: str, request: Request, db: Se
     db.commit()
 
 @app.get("/player-gameweeks", dependencies=[Depends(require_api_key)])
-def get_gameweeks(db: Session = Depends(get_db), season: Optional[str] = None, player_code: Optional[int] = None):
-    return read_gameweeks(db, season=season, player_code=player_code)
+def get_gameweeks(db: Session = Depends(get_db), season: Optional[str] = None, player_code: Optional[int] = None,
+                   limit: int = 1000, offset: int = 0):
+    return read_gameweeks(db, season=season, player_code=player_code, limit=limit, offset=offset)
 
 @app.post("/ingest-historical/{season}")
 def ingest_historical(season: str, db: Session = Depends(get_db)):
