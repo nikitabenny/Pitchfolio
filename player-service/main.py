@@ -4,6 +4,7 @@ from database import Base,engine,get_db
 from fpl_client import lifespan, fetch_bootstrap, fetch_history, fetch_fixtures, fetch_current_gameweek
 from typing import Optional
 from crud import find_player_value, pos_price_match, under_budget, upsert_player, read_players, find_player_by_id, find_player_by_eltype, find_player_points, build_gameweek_rows, upsert_player_gameweek, max_ingested_round
+from historical import build_historical_rows
 
 app = FastAPI(lifespan = lifespan)
 
@@ -69,6 +70,12 @@ async def ingest_gameweeks(player_id: int, season: str, request: Request, db: Se
 
     new_history = [row for row in history_data["history"] if max_round is None or row["round"] > max_round]
     rows = build_gameweek_rows(player.code, season, new_history, fixtures_by_id)
+    upsert_player_gameweek(db, rows)
+    db.commit()
+
+@app.post("/ingest-historical/{season}")
+def ingest_historical(season: str, db: Session = Depends(get_db)):
+    rows = build_historical_rows(season)
     upsert_player_gameweek(db, rows)
     db.commit()
 
