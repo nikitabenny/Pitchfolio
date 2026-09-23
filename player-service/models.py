@@ -1,4 +1,4 @@
-from sqlalchemy import String, DateTime
+from sqlalchemy import String, DateTime, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column
 from datetime import datetime
 from typing import Optional
@@ -7,6 +7,7 @@ from database import Base
 class Player(Base):
     __tablename__ = "player"
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    code: Mapped[int] = mapped_column(index=True) #stable across seasons, unlike id
     element_type: Mapped[int] = mapped_column(index=True)
     web_name: Mapped[str] = mapped_column(String(50), index=True)
     now_cost: Mapped[float] = mapped_column(index=True)
@@ -31,9 +32,15 @@ class Player(Base):
 
 class PlayerGameweek(Base):
     __tablename__ = "player_gameweek"
-    player_id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    season: Mapped[str] = mapped_column(String(9), primary_key=True)
-    round: Mapped[int] = mapped_column(primary_key=True, index=True)
+    __table_args__ = (
+        UniqueConstraint("player_code", "season", "round", name="uq_player_gameweek_code_season_round"),
+    )
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    player_code: Mapped[int] = mapped_column(index=True) #stable across seasons - the real join key
+    element_id: Mapped[int] = mapped_column() #that season's FPL element id, not stable across seasons
+    season: Mapped[str] = mapped_column(String(9))
+    round: Mapped[int] = mapped_column(index=True)
 
     team: Mapped[Optional[int]] = mapped_column()
     opponent_team: Mapped[Optional[int]] = mapped_column()

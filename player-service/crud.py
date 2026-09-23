@@ -10,7 +10,7 @@ SUMMED_INT_FIELDS = [
 SUMMED_FLOAT_FIELDS = ["ict_index", "expected_goals", "expected_assists", "expected_goals_conceded"]
 
 
-def build_gameweek_rows(player_id: int, season: str, history: list[dict], fixtures_by_id: dict[int, dict]) -> list[dict]:
+def build_gameweek_rows(player_code: int, season: str, history: list[dict], fixtures_by_id: dict[int, dict]) -> list[dict]:
     by_round: dict[int, list[dict]] = {}
     for row in history:
         by_round.setdefault(row["round"], []).append(row)
@@ -35,7 +35,8 @@ def build_gameweek_rows(player_id: int, season: str, history: list[dict], fixtur
                 difficulties.append(fixture["team_h_difficulty"] if row["was_home"] else fixture["team_a_difficulty"])
 
         result = {
-            "player_id": player_id,
+            "player_code": player_code,
+            "element_id": first["element"],
             "season": season,
             "round": round_number,
             "team": team,
@@ -59,16 +60,20 @@ def build_gameweek_rows(player_id: int, season: str, history: list[dict], fixtur
     return results
 
 
-def max_ingested_round(db: Session, player_id: int, season: str) -> int | None:
+def max_ingested_round(db: Session, player_code: int, season: str) -> int | None:
     return db.query(func.max(PlayerGameweek.round)).filter(
-        PlayerGameweek.player_id == player_id,
+        PlayerGameweek.player_code == player_code,
         PlayerGameweek.season == season,
     ).scalar()
 
 
 def upsert_player_gameweek(db: Session, rows: list[dict]):
     for row in rows:
-        existing = db.get(PlayerGameweek, (row["player_id"], row["season"], row["round"]))
+        existing = db.query(PlayerGameweek).filter(
+            PlayerGameweek.player_code == row["player_code"],
+            PlayerGameweek.season == row["season"],
+            PlayerGameweek.round == row["round"],
+        ).one_or_none()
         if existing is None:
             existing = PlayerGameweek()
 
