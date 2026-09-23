@@ -22,3 +22,15 @@ async def fetch_bootstrap(client : httpx.AsyncClient) -> dict:
     response.raise_for_status()
     return response.json()
 
+async def fetch_history(client : httpx.AsyncClient, player_id : int) -> dict:
+    response = await client.get(f'element-summary/{player_id}/')
+
+    response.raise_for_status()
+    return response.json()
+
+async def fetch_fixtures(client : httpx.AsyncClient) -> list[dict]:
+    response = await client.get('fixtures/')
+
+    response.raise_for_status()
+    return response.json()
+
