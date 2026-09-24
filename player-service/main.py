@@ -70,7 +70,7 @@ async def ingest_gameweeks(player_id: int, season: str, request: Request, db: Se
     fixtures_by_id = {fixture["id"]: fixture for fixture in fixtures}
 
     new_history = [row for row in history_data["history"] if max_round is None or row["round"] > max_round]
-    rows = build_gameweek_rows(player.code, season, new_history, fixtures_by_id)
+    rows = build_gameweek_rows(player.code, player.element_type, season, new_history, fixtures_by_id)
     upsert_player_gameweek(db, rows)
     db.commit()
 
@@ -98,7 +98,7 @@ async def ingest_all_gameweeks(season: str, request: Request, db: Session = Depe
 
         history_data = await fetch_history(request.app.state.client, player.id)
         new_history = [row for row in history_data["history"] if max_round is None or row["round"] > max_round]
-        rows = build_gameweek_rows(player.code, season, new_history, fixtures_by_id)
+        rows = build_gameweek_rows(player.code, player.element_type, season, new_history, fixtures_by_id)
         upsert_player_gameweek(db, rows)
 
     db.commit()

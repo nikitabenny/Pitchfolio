@@ -9,8 +9,15 @@ SUMMED_INT_FIELDS = [
 ]
 SUMMED_FLOAT_FIELDS = ["ict_index", "expected_goals", "expected_assists", "expected_goals_conceded"]
 
+#2024-25's assistant manager chip - real PL managers scoring off team results, not players
+ASSISTANT_MANAGER_ELEMENT_TYPE = 5
 
-def build_gameweek_rows(player_code: int, season: str, history: list[dict], fixtures_by_id: dict[int, dict]) -> list[dict]:
+
+def build_gameweek_rows(player_code: int, element_type: int, season: str, history: list[dict],
+                        fixtures_by_id: dict[int, dict]) -> list[dict]:
+    if element_type == ASSISTANT_MANAGER_ELEMENT_TYPE:
+        return []
+
     by_round: dict[int, list[dict]] = {}
     for row in history:
         by_round.setdefault(row["round"], []).append(row)
@@ -37,6 +44,7 @@ def build_gameweek_rows(player_code: int, season: str, history: list[dict], fixt
         result = {
             "player_code": player_code,
             "element_id": first["element"],
+            "element_type": element_type,
             "season": season,
             "round": round_number,
             "team": team,

@@ -39,6 +39,7 @@ class PlayerGameweek(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     player_code: Mapped[int] = mapped_column(index=True) #stable across seasons - the real join key
     element_id: Mapped[int] = mapped_column() #that season's FPL element id, not stable across seasons
+    element_type: Mapped[int] = mapped_column(index=True) #position that season - players can be reclassified between seasons
     season: Mapped[str] = mapped_column(String(9))
     round: Mapped[int] = mapped_column(index=True)
 

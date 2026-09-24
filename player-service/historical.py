@@ -6,14 +6,14 @@ from crud import build_gameweek_rows
 RAW_BASE_URL = "https://raw.githubusercontent.com/vaastav/Fantasy-Premier-League/master/data"
 
 
-def fetch_id_code_map(season: str) -> dict[int, int]:
-    #maps that season's FPL element id -> the stable player code, from vaastav's players_raw.csv
+def fetch_element_map(season: str) -> dict[int, tuple[int, int]]:
+    #maps that season's FPL element id -> (stable player code, that season's element_type), from vaastav's players_raw.csv
     url = f"{RAW_BASE_URL}/{season}/players_raw.csv"
     response = httpx.get(url, timeout=15)
     response.raise_for_status()
 
     reader = csv.DictReader(io.StringIO(response.text))
-    return {int(row["id"]): int(row["code"]) for row in reader}
+    return {int(row["id"]): (int(row["code"]), int(row["element_type"])) for row in reader}
 
 
 def fetch_historical_gameweeks(season: str) -> list[dict]:
@@ -71,7 +71,7 @@ def fetch_historical_fixtures(season: str) -> dict[int, dict]:
 
 
 def build_historical_rows(season: str) -> list[dict]:
-    id_code_map = fetch_id_code_map(season)
+    element_map = fetch_element_map(season)
     fixtures_by_id = fetch_historical_fixtures(season)
     gameweeks = fetch_historical_gameweeks(season)
 
@@ -81,10 +81,11 @@ def build_historical_rows(season: str) -> list[dict]:
 
     all_rows = []
     for element_id, history in rows_by_element.items():
-        player_code = id_code_map.get(element_id)
-        if player_code is None:
+        element = element_map.get(element_id)
+        if element is None:
             continue #shouldn't happen, but don't let one bad row sink the whole season's backfill
 
-        all_rows.extend(build_gameweek_rows(player_code, season, history, fixtures_by_id))
+        player_code, element_type = element
+        all_rows.extend(build_gameweek_rows(player_code, element_type, season, history, fixtures_by_id))
 
     return all_rows
